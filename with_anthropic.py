@@ -1,20 +1,19 @@
 import os
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic  # Use Anthropic integration
+from langchain_anthropic import ChatAnthropic
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import tool
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 from langchain_community.tools import DuckDuckGoSearchRun
 
 # Load environment variables
 load_dotenv()
 
-# Set your Anthropic API key
-os.environ["ANTHROPIC_API_KEY"] = "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"
+api_key = os.environ["ANTHROPIC_API_KEY"]
+model = "claude-3-5-sonnet-20240620"
 
 # Initialize the LLM using Anthropic's Claude
-llm = ChatAnthropic(model="claude-3-sonnet-20240229")
+llm = ChatAnthropic(model=model, api_key=api_key)
 
 # Test the LLM
 response = llm.invoke("Hello, world!")
@@ -35,7 +34,7 @@ tools = [
     search_tool,
 ]
 
-# Create the agent prompt
+# Create the agent prompt - FIXED with agent_scratchpad
 prompt = PromptTemplate.from_template("""
 You are an intelligent AI assistant. Your goal is to help users accomplish their tasks.
 Use these tools to answer the user question:
@@ -55,7 +54,7 @@ Final Answer: the final answer to the original user question
 Begin!
 
 Question: {input}
-Thought: 
+{agent_scratchpad}
 """)
 
 # Create the agent
@@ -80,8 +79,12 @@ def run_agent():
         user_input = input("\nYou: ")
         if user_input.lower() == 'exit':
             break
-        response = agent_executor.invoke({"input": user_input})
-        print(f"\nAgent: {response['output']}")
+        try:
+            response = agent_executor.invoke({"input": user_input})
+            print(f"\nAgent: {response['output']}")
+        except Exception as e:
+            print(f"\nError: {str(e)}")
+            print("Please try again with a different query.")
 
 # Run the agent if this file is executed directly
 if __name__ == "__main__":
